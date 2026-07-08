@@ -1,56 +1,45 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { Category } from './entities/category.entity';
+import { Category, CategoryDocument } from './entities/category.entity';
 
 @Injectable()
 export class CategoriesService {
-  private categories: Category[] = [];
-  private idCount = 1;
-
+  constructor(
+    @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
+  ) {}
   create(createCategoryDto: CreateCategoryDto) {
-    const newCategory = {
-      id: this.idCount++,
-      description: createCategoryDto.description ?? '',
-      ...createCategoryDto,
-    };
-    this.categories.push(newCategory);
-    return newCategory;
+    return this.categoryModel.create(createCategoryDto);
   }
-
   findAll() {
-    return this.categories;
+    return this.categoryModel.find();
   }
-
-  findOne(id: number) {
-    const foundCategory = this.categories.find((category) => {
-      return category.id === id;
-    });
-    if (!foundCategory) {
+  async findOne(id: string) {
+    const category = await this.categoryModel.findById(id);
+    if (!category) {
       throw new NotFoundException('Category not found');
     }
-    return foundCategory;
+    return category;
   }
-
-  update(id: number, updateCategoryDto: UpdateCategoryDto) {
-    const foundCategory = this.categories.find((category) => {
-      return category.id === id;
-    });
-    if (!foundCategory) {
-      throw new NotFoundException('Category not found');
-    }
-    const updatedCategory = {
-      ...foundCategory,
-      ...updateCategoryDto,
-    };
-    this.categories = this.categories.map((cat) =>
-      cat.id === id ? updatedCategory : cat,
+  async update(id: string, updateCategoryDto: UpdateCategoryDto) {
+    const updatedcategory = await this.categoryModel.findByIdAndUpdate(
+      id,
+      updateCategoryDto,
+      { new: true },
     );
-    return updatedCategory;
+    if (!updatedcategory) {
+      throw new NotFoundException('Category not found');
+    }
+    return updatedcategory;
   }
 
-  remove(id: number) {
-    this.findOne(id);
-    this.categories = this.categories.filter((cat) => cat.id !== id);
+  async remove(id: string) {
+    const removedcategory = await this.categoryModel.findByIdAndDelete(id);
+    if (!removedcategory) {
+      throw new NotFoundException('Category not found');
+    }
+    return removedcategory;
   }
 }
