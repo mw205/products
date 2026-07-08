@@ -12,7 +12,7 @@ export class UsersService {
     return this.userModel.create(createUserDto);
   }
   findByEmail(email: string) {
-    return this.userModel.findOne({ email });
+    return this.userModel.findOne({ email }).select('+password');
   }
 
   findAll() {
