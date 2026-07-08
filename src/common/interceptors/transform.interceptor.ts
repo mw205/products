@@ -8,7 +8,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 export interface Response<T> {
-  statusCode: number;
+  status: boolean;
   message: string;
   data: T;
 }
@@ -23,8 +23,6 @@ export class TransformInterceptor<T>
   ): Observable<Response<T>> {
     const ctx = context.switchToHttp();
     const request = ctx.getRequest();
-    const response = ctx.getResponse();
-    const statusCode = response.statusCode;
 
     // Determine default message based on HTTP method
     let defaultMessage = 'Request processed successfully';
@@ -54,7 +52,7 @@ export class TransformInterceptor<T>
         }
 
         return {
-          statusCode,
+          status: true,
           message,
           data: resultData,
         };
