@@ -1,53 +1,45 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CategoriesService } from './../categories/categories.service';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { CategoriesService } from 'src/categories/categories.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
 
 @Injectable()
 export class ProductsService {
-  private products: Product[] = [];
-  private idCount = 1;
-  constructor(private readonly categoriesService: CategoriesService) {}
-  create(createProductDto: CreateProductDto) {
-    const newProduct = {
-      id: this.idCount++,
-      ...createProductDto,
-    };
-    this.products.push(newProduct);
-    return newProduct;
+  constructor(
+    @InjectModel(Product.name) private readonly productModel: Model<Product>,
+    private readonly categoryService: CategoriesService,
+  ) {}
+  async create(createProductDto: CreateProductDto) {
+    await this.categoryService.findOne(createProductDto.categoryId);
+    return this.productModel.create(createProductDto);
   }
 
   findAll() {
-    return this.products;
+    return this.productModel.find();
   }
 
-  findOne(id: number) {
-    const product = this.products.find((p) => p.id === id);
+  async findOne(id: string) {
+    const product = await this.productModel.findById(id);
     if (!product) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
+      throw new NotFoundException('Product not found');
+    } else {
+      return product;
     }
-    return product;
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    const product = this.findOne(id);
+  async update(id: string, updateProductDto: UpdateProductDto) {
     if (updateProductDto.categoryId) {
-      this.categoriesService.findOne(updateProductDto.categoryId);
+      await this.categoryService.findOne(updateProductDto.categoryId);
     }
-
-    const updatedProduct = {
-      ...product,
-      ...updateProductDto,
-    };
-    this.products = this.products.map((p) =>
-      p.id === id ? updatedProduct : p,
-    );
-    return updatedProduct;
+    return this.productModel.findByIdAndUpdate(id, updateProductDto, {
+      new: true,
+    });
   }
 
-  remove(id: number) {
-    this.findOne(id);
-    this.products = this.products.filter((p) => p.id !== id);
+  remove(id: string) {
+    return this.productModel.findByIdAndDelete(id);
   }
 }

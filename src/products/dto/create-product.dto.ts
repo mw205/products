@@ -1,5 +1,6 @@
 import {
   IsInt,
+  IsMongoId,
   IsNotEmpty,
   IsNumber,
   IsPositive,
@@ -11,14 +12,15 @@ export class CreateProductDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(2, { message: 'Product name must be at least 2 characters long.' })
-  name: string;
+  name!: string;
   @IsNumber()
   @IsPositive()
-  price: number;
+  price!: number;
   @IsInt()
   @IsPositive()
-  stock: number;
-  @IsInt()
+  stock!: number;
+  @IsString()
   @IsNotEmpty()
-  categoryId: number;
+  @IsMongoId()
+  categoryId!: string;
 }
